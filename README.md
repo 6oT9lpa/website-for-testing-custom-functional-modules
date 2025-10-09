@@ -1,4 +1,4 @@
-# Flask Application with Docker
+# Flask Application
 
 This is a Flask web application that allows users to create, manage, and execute custom functions. It includes user authentication, role-based access control, and integration with AI chat functionality.
 
@@ -16,7 +16,7 @@ This is a Flask web application that allows users to create, manage, and execute
 
 ⚠️ **IMPORTANT**: This application executes user-uploaded Python code dynamically. This is extremely dangerous in production environments as it can lead to arbitrary code execution vulnerabilities. In a real-world scenario, you should:
 
-- Use a sandboxed environment (e.g., Docker containers with restricted permissions)
+- Use a sandboxed environment (e.g., isolated execution environments or restricted permissions)
 - Implement code analysis and whitelisting
 - Restrict allowed modules and functions
 - Add proper input validation and sanitization
@@ -25,7 +25,7 @@ The current implementation includes basic warnings but is not production-ready f
 
 ## Prerequisites
 
-- Docker and Docker Compose
+- Python 3.11+
 - Git
 
 ## Setup
@@ -36,34 +36,29 @@ The current implementation includes basic warnings but is not production-ready f
    cd <project-directory>
    ```
 
-2. Copy the environment file and configure it:
+2. Create a virtual environment (optional but recommended):
    ```bash
-   cp .env.example .env
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-   Edit `.env` with your actual values:
-   ```env
-   SECRET_KEY=your-very-secure-secret-key-here
-   SQLALCHEMY_DATABASE_URI=mysql://user:password@db:3306/project
-   REDIS_URL=redis://redis:6379/0
-   MYSQL_ROOT_PASSWORD=your-secure-root-password
-   MYSQL_DATABASE=project
-   MYSQL_USER=user
-   MYSQL_PASSWORD=your-secure-password
-   ```
-
-3. Build and run the application:
+3. Install dependencies:
    ```bash
-   docker-compose up --build
+   pip install -r requirements.txt
    ```
 
-4. The application will be available at `http://localhost:5000`
+4. Set environment variables (optional, defaults are in config.py):
+   ```bash
+   export SECRET_KEY=your-very-secure-secret-key-here
+   export SQLALCHEMY_DATABASE_URI=sqlite:///project.db
+   ```
 
-## Services
+5. Run the application:
+   ```bash
+   python run.py
+   ```
 
-- **app**: Flask application (Python 3.11)
-- **db**: MariaDB 10.11 database
-- **redis**: Redis 7 for caching and rate limiting
+6. The application will be available at `http://localhost:8000`
 
 ## Development
 
@@ -74,7 +69,7 @@ To run in development mode:
    pip install -r requirements.txt
    ```
 
-2. Set up environment variables (see .env.example)
+2. Set up environment variables (optional, defaults are in config.py)
 
 3. Run the application:
    ```bash
@@ -86,16 +81,9 @@ To run in development mode:
 The application uses Flask-Migrate for database migrations. To create and apply migrations:
 
 ```bash
-# Inside the container
 flask db init
 flask db migrate
 flask db upgrade
-```
-
-Or use docker-compose exec:
-
-```bash
-docker-compose exec app flask db upgrade
 ```
 
 ## API Endpoints
@@ -111,23 +99,45 @@ docker-compose exec app flask db upgrade
 
 ```
 .
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── .env.example
-├── .dockerignore
-├── config.py
-├── limiter.py
-├── main.py
-├── run.py
 ├── __init__.py
+├── config.py
+├── main.py
+├── models.py
+├── README.md
+├── requirements.txt
+├── run.py
+├── .gitignore
+├── instance/
+│   └── project.db
+├── routes/
+│   ├── api.py
+│   ├── auth.py
+│   ├── functions.py
+│   └── users.py
 ├── static/
 │   ├── css/
-│   ├── js/
-│   └── uploads/
+│   │   ├── adminpanel-style.css
+│   │   ├── function-editor.css
+│   │   ├── index-style.css
+│   │   ├── profile-style.css
+│   │   └── root-style.css
+│   └── js/
+│       ├── admin-script.js
+│       ├── function-editor.js
+│       ├── index-script.js
+│       ├── profile-script.js
+│       ├── root-script.js
+│       └── modules/
+│           ├── function-executor.js
+│           ├── function-selector.js
+│           └── ui-helpers.js
 ├── templates/
-└── uploads/
-    └── func_models/
+│   ├── admin_panel.html
+│   ├── function_editor.html
+│   ├── index.html
+│   └── profile.html
+└── utils/
+    └── code_execution.py
 ```
 
 ## Environment Variables
@@ -135,12 +145,7 @@ docker-compose exec app flask db upgrade
 | Variable | Description | Default |
 |----------|-------------|---------|
 | SECRET_KEY | Flask secret key | change-this-in-production |
-| SQLALCHEMY_DATABASE_URI | Database connection string | mysql://user:password@db:3306/project |
-| REDIS_URL | Redis connection string | redis://redis:6379/0 |
-| MYSQL_ROOT_PASSWORD | MySQL root password | - |
-| MYSQL_DATABASE | MySQL database name | project |
-| MYSQL_USER | MySQL user | user |
-| MYSQL_PASSWORD | MySQL password | password |
+| SQLALCHEMY_DATABASE_URI | Database connection string | sqlite:///project.db |
 
 ## Contributing
 

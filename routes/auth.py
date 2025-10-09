@@ -9,7 +9,7 @@ auth_bp = Blueprint('auth', __name__)
 def index():
     """Main page route. Redirects authenticated users to profile, shows login modal for others."""
     if current_user.is_authenticated and not session.pop('login_redirect', False):
-        return redirect(url_for('main.profile'))
+        return redirect(url_for('main.users.profile'))
 
     return render_template('index.html', show_login_modal=session.pop('login_redirect', False))
 
@@ -17,7 +17,7 @@ def index():
 def auth():
     """Authentication page route. Redirects authenticated users to profile."""
     if current_user.is_authenticated:
-        next_url = request.args.get('next') or url_for('main.profile')
+        next_url = request.args.get('next') or url_for('main.users.profile')
         return redirect(next_url)
 
     return render_template('auth.html')
@@ -26,7 +26,7 @@ def auth():
 def login():
     """Handle user login via POST request."""
     if current_user.is_authenticated:
-        next_url = request.args.get('next') or url_for('main.profile')
+        next_url = request.args.get('next') or url_for('main.users.profile')
         return redirect(next_url)
 
     data = request.get_json()
@@ -44,7 +44,7 @@ def login():
 
     if user and user.check_password(password):
         login_user(user)
-        next_url = url_for('main.profile')
+        next_url = url_for('main.users.profile')
         print(next_url)
         return jsonify({
             "success": True,
@@ -62,7 +62,7 @@ def register():
     """Handle user registration via POST request."""
     try:
         if current_user.is_authenticated:
-            next_url = request.args.get('next') or url_for('main.profile')
+            next_url = request.args.get('next') or url_for('main.users.profile')
             return redirect(next_url)
 
         data = request.get_json()
