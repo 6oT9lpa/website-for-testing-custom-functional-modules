@@ -154,7 +154,3 @@ flask db upgrade
 3. Make your changes
 4. Test thoroughly
 5. Submit a pull request
-
-## License
-
-[Add your license here]
