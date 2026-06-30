@@ -1,156 +1,222 @@
-# Flask Application
+# FunctionLab
 
-This is a Flask web application that allows users to create, manage, and execute custom functions. It includes user authentication, role-based access control, and integration with AI chat functionality.
+`FunctionLab` — Flask-приложение для создания, хранения, администрирования и тестового запуска пользовательских Python-функций через веб-интерфейс.
 
-## Features
+Проект показывает backend-логику вокруг пользователей, ролей, доступа к функциям, истории запусков и административной панели. Это портфолио-пример для демонстрации работы с Flask, SQLAlchemy, Flask-Login, ролями и CRUD-сценариями.
 
-- User registration and authentication
-- Role-based permissions (user/admin)
-- Function creation and execution (with code upload)
-- Admin panel for user and function management
-- Real-time chat with AI integration
-- Rate limiting
-- File uploads
+> Важно: проект содержит динамическое выполнение пользовательского Python-кода. Текущая реализация подходит для учебной среды и локальных экспериментов, но не является безопасной production-песочницей.
 
-## Security Warning
+## Что реализовано
 
-⚠️ **IMPORTANT**: This application executes user-uploaded Python code dynamically. This is extremely dangerous in production environments as it can lead to arbitrary code execution vulnerabilities. In a real-world scenario, you should:
+- регистрация и авторизация пользователей;
+- хранение пользователей, ролей и пользовательских функций в базе данных;
+- роли `user` и `admin` при первом запуске;
+- управление функциями через web/API;
+- назначение функций ролям;
+- проверка доступа пользователя к функциям;
+- выполнение пользовательских функций;
+- сохранение истории запусков функций;
+- административная панель для управления пользователями, ролями и функциями;
+- базовое ограничение частоты запросов;
+- загрузка файлов;
+- frontend на HTML, CSS и JavaScript.
 
-- Use a sandboxed environment (e.g., isolated execution environments or restricted permissions)
-- Implement code analysis and whitelisting
-- Restrict allowed modules and functions
-- Add proper input validation and sanitization
+## Стек
 
-The current implementation includes basic warnings but is not production-ready for security.
+| Зона | Технологии |
+|---|---|
+| Backend | `Python`, `Flask`, `Blueprints` |
+| Database | `SQLAlchemy`, `Flask-Migrate`, `SQLite` по умолчанию |
+| Auth | `Flask-Login`, password hashing через `Werkzeug` |
+| Frontend | `HTML`, `CSS`, `JavaScript` |
+| Admin logic | роли, permissions, связь ролей с функциями |
 
-## Prerequisites
+## Архитектура проекта
 
-- Python 3.11+
-- Git
+```text
+FunctionLab/
+├── __init__.py                 # создание Flask app, db, login manager
+├── config.py                   # конфигурация приложения
+├── main.py                     # основные routes и подключение страниц
+├── models.py                   # SQLAlchemy-модели
+├── run.py                      # точка запуска приложения
+├── requirements.txt            # зависимости проекта
+├── routes/
+│   ├── api.py                  # API для ролей, функций и истории запусков
+│   ├── auth.py                 # auth-related routes
+│   ├── functions.py            # работа с пользовательскими функциями
+│   └── users.py                # работа с пользователями
+├── static/
+│   ├── css/                    # стили интерфейса
+│   └── js/                     # клиентская логика
+├── templates/                  # HTML-шаблоны
+└── utils/
+    └── code_execution.py       # выполнение пользовательского кода
+```
 
-## Setup
+## Модель данных
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd <project-directory>
-   ```
+Ключевые сущности:
 
-2. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+### `User`
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Хранит пользователя приложения:
 
-4. Set environment variables (optional, defaults are in config.py):
-   ```bash
-   export SECRET_KEY=your-very-secure-secret-key-here
-   export SQLALCHEMY_DATABASE_URI=sqlite:///project.db
-   ```
+- `username`;
+- `email`;
+- hashed password;
+- дату регистрации;
+- последнюю активность;
+- список ролей;
+- связанные пользовательские функции.
 
-5. Run the application:
-   ```bash
-   python run.py
-   ```
+### `Role`
 
-6. The application will be available at `http://localhost:8000`
+Описывает роль пользователя:
 
-## Development
+- `name`;
+- `description`;
+- `is_admin`;
+- `permissions`;
+- связь с функциями, доступными роли.
 
-To run in development mode:
+### `FunctionUser`
 
-1. Install dependencies locally:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Хранит пользовательскую функцию:
 
-2. Set up environment variables (optional, defaults are in config.py)
+- название;
+- описание;
+- код;
+- тип функции;
+- статус approval;
+- автора;
+- тестовые данные.
 
-3. Run the application:
-   ```bash
-   python run.py
-   ```
+### `FunctionExecution`
 
-## Database Migrations
+Хранит историю запусков:
 
-The application uses Flask-Migrate for database migrations. To create and apply migrations:
+- функцию;
+- пользователя;
+- аргументы;
+- результат;
+- статус успешности;
+- время запуска.
+
+## Основные API endpoints
+
+| Endpoint | Метод | Назначение |
+|---|---:|---|
+| `/api/roles` | `GET` | получить список ролей |
+| `/api/role/<id>` | `GET` | получить данные роли и связанные функции |
+| `/api/role` | `POST` | создать роль |
+| `/api/role/<id>` | `PUT` | обновить роль |
+| `/api/role/<id>` | `DELETE` | удалить роль и переназначить пользователей |
+| `/api/function/execution` | `POST` | сохранить результат запуска функции |
+| `/api/function/executions` | `GET` | получить последние запуски пользователя |
+
+## Логика доступа
+
+Администратор получает доступ ко всем функциям. Обычный пользователь видит только те функции, которые доступны через его роли.
+
+Проверка доступа выполняется через связи:
+
+```text
+User -> roles -> functions
+```
+
+Если у роли установлен флаг `is_admin`, пользователь получает административные возможности.
+
+## Безопасность
+
+Проект намеренно содержит модуль выполнения пользовательского кода, поэтому важно понимать ограничения текущей реализации.
+
+Сейчас используется функция `safe_exec`, которая подменяет `__builtins__`, но это не является полноценной песочницей. Для production-сценария нужно заменить этот механизм на изолированное выполнение:
+
+- Docker-контейнер на один запуск;
+- лимиты CPU/RAM/timeouts;
+- запрет сетевого доступа;
+- read-only filesystem;
+- отдельный непривилегированный пользователь;
+- audit логов выполнения;
+- строгая валидация входных данных;
+- запрет опасных builtin-функций.
+
+Текущий проект стоит рассматривать как учебный стенд для проверки функциональной логики, а не как безопасный сервис исполнения произвольного кода.
+
+## Быстрый старт
+
+### 1. Клонировать репозиторий
+
+```bash
+git clone https://github.com/6oT9lpa/website-for-testing-custom-functional-modules.git
+cd website-for-testing-custom-functional-modules
+```
+
+### 2. Создать виртуальное окружение
+
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Linux / macOS:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Установить зависимости
+
+```bash
+pip install -r requirements.txt
+```
+
+Если файла `requirements.txt` нет в текущей версии репозитория, установите основные зависимости вручную:
+
+```bash
+pip install flask flask-sqlalchemy flask-migrate flask-login werkzeug pytz
+```
+
+### 4. Запустить приложение
+
+```bash
+python run.py
+```
+
+После запуска приложение доступно по адресу:
+
+```text
+http://localhost:8000
+```
+
+При старте приложение создаёт таблицы и базовые роли `user` / `admin`, если они ещё не существуют.
+
+## Миграции базы данных
+
+Проект использует `Flask-Migrate`.
 
 ```bash
 flask db init
-flask db migrate
+flask db migrate -m "initial migration"
 flask db upgrade
 ```
 
-## API Endpoints
+Для локального учебного запуска также используется `db.create_all()` в `run.py`.
 
-- `/` - Home page
-- `/auth` - Authentication page
-- `/profile` - User profile
-- `/admin-panel` - Admin panel (admin only)
-- `/api/function` - Function management
-- `/api/function/<id>/execute` - Execute function
+## Что проект показывает работодателю
 
-## File Structure
+- Умение строить Flask-приложение с разделением на routes, models, utils и templates.
+- Понимание авторизации через `Flask-Login`.
+- Работа с SQLAlchemy-моделями и связями many-to-many.
+- Реализация ролей и проверок доступа.
+- CRUD-логика вокруг пользовательских сущностей.
+- История действий пользователя через отдельную таблицу `FunctionExecution`.
+- Понимание рисков безопасности при выполнении пользовательского кода.
 
-```
-.
-├── __init__.py
-├── config.py
-├── main.py
-├── models.py
-├── README.md
-├── requirements.txt
-├── run.py
-├── .gitignore
-├── instance/
-│   └── project.db
-├── routes/
-│   ├── api.py
-│   ├── auth.py
-│   ├── functions.py
-│   └── users.py
-├── static/
-│   ├── css/
-│   │   ├── adminpanel-style.css
-│   │   ├── function-editor.css
-│   │   ├── index-style.css
-│   │   ├── profile-style.css
-│   │   └── root-style.css
-│   └── js/
-│       ├── admin-script.js
-│       ├── function-editor.js
-│       ├── index-script.js
-│       ├── profile-script.js
-│       ├── root-script.js
-│       └── modules/
-│           ├── function-executor.js
-│           ├── function-selector.js
-│           └── ui-helpers.js
-├── templates/
-│   ├── admin_panel.html
-│   ├── function_editor.html
-│   ├── index.html
-│   └── profile.html
-└── utils/
-    └── code_execution.py
-```
+## Статус проекта
 
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| SECRET_KEY | Flask secret key | change-this-in-production |
-| SQLALCHEMY_DATABASE_URI | Database connection string | sqlite:///project.db |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+Пет-проект / учебный стенд. Для production требуется переработать sandbox-архитектуру, управление секретами, логи, миграции, тесты и изоляцию выполнения кода.
